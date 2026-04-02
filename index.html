@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>C&A SYSTEM v3</title>
+
+<style>
+body {
+  margin: 0;
+  overflow: hidden;
+  font-family: monospace;
+  background: black;
+  color: white;
+}
+
+#grid {
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+  background-size: 50px 50px;
+}
+
+/* BOOT */
+#boot {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: black;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+#ascii {
+  white-space: pre;
+  color: lime;
+  text-align: center;
+}
+
+#bootInput {
+  width: 60%;
+  padding: 10px;
+  background: black;
+  border: 1px solid lime;
+  color: lime;
+}
+
+/* MAIN */
+#main {
+  display: none;
+  width: 100%;
+  height: 100%;
+}
+
+/* SPLIT SYSTEM */
+.panel {
+  position: absolute;
+  width: 50%;
+  height: 100%;
+  top: 0;
+}
+
+#cainePanel { left: 0; }
+#abelPanel { right: 0; display: none; }
+
+/* SPHERE */
+.sphere {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%,-50%);
+  transition: 0.2s;
+}
+
+#caine { background: red; box-shadow: 0 0 20px red; }
+#abel { background: blue; box-shadow: 0 0 20px blue; }
+
+/* INPUT */
+.input {
+  position: absolute;
+  bottom: 20px;
+  width: 80%;
+  left: 10%;
+  padding: 10px;
+  background: black;
+  border: 1px solid white;
+  color: white;
+}
+
+/* POPUP */
+.popup {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%,-50%);
+  background: black;
+  border: 2px solid red;
+  padding: 20px;
+  z-index: 999;
+}
+</style>
+</head>
+
+<body>
+
+<div id="grid"></div>
+
+<!-- BOOT -->
+<div id="boot">
+<pre id="ascii">
+   ██████╗  █████╗ 
+  ██╔════╝ ██╔══██╗
+  ██║      ███████║
+  ██║      ██╔══██║
+  ╚██████╗ ██║  ██║
+   ╚═════╝ ╚═╝  ╚═╝
+      C & A SYSTEM
+</pre>
+
+<input id="bootInput" placeholder="open caine application"
+onkeydown="if(event.key==='Enter') boot()">
+</div>
+
+<!-- MAIN -->
+<div id="main">
+
+  <div id="cainePanel" class="panel">
+    <div id="caine" class="sphere"></div>
+    <div id="caineText"></div>
+    <input class="input" id="caineInput">
+  </div>
+
+  <div id="abelPanel" class="panel">
+    <div id="abel" class="sphere"></div>
+    <div id="abelText"></div>
+    <input class="input" id="abelInput">
+  </div>
+
+</div>
+
+<script>
+
+/* ======================
+   MEMORY SYSTEM
+====================== */
+let memory = JSON.parse(localStorage.getItem("C_A_MEMORY") || "{}");
+
+function saveMemory() {
+  localStorage.setItem("C_A_MEMORY", JSON.stringify(memory));
+}
+
+/* ======================
+   STATES
+====================== */
+let state = {
+  caineEmotion: "neutral",
+  abelExists: false,
+  locked: {}
+};
+
+/* ======================
+   BOOT
+====================== */
+function boot() {
+  let val = document.getElementById("bootInput").value.toLowerCase();
+
+  if (val.includes("open caine application")) {
+    document.getElementById("boot").style.display = "none";
+    document.getElementById("main").style.display = "block";
+    say("caine", "I see you again...");
+    watchCheck();
+  }
+}
+
+/* ======================
+   INPUT HANDLING
+====================== */
+document.getElementById("caineInput").onkeydown = e => {
+  if(e.key === "Enter") handle("caine", e.target.value);
+};
+
+document.getElementById("abelInput").onkeydown = e => {
+  if(e.key === "Enter") handle("abel", e.target.value);
+};
+
+function handle(ai, input) {
+  input = input.toLowerCase();
+
+  memory.last = input;
+  saveMemory();
+
+  if(ai === "caine") caineCommands(input);
+  if(ai === "abel") abelResponse(input);
+}
+
+/* ======================
+   CAINE COMMANDS
+====================== */
+function caineCommands(input) {
+
+  if(input.includes("caine, build")) {
+    spawnShapes();
+    say("caine", "I will create...");
+  }
+
+  if(input.includes("shut down program//:caine")) {
+    panicShutdown();
+  }
+
+  if(input.includes("files//:create{abel}")) {
+    createAbel();
+  }
+}
+
+/* ======================
+   ABEL
+====================== */
+function createAbel() {
+  state.abelExists = true;
+  document.getElementById("abelPanel").style.display = "block";
+  say("abel", "Hello. I understand you.");
+}
+
+/* ======================
+   RESPONSE
+====================== */
+function say(ai, msg) {
+  document.getElementById(ai + "Text").innerText =
+    ai.toUpperCase() + ": " + msg;
+}
+
+/* ======================
+   BUILD SYSTEM
+====================== */
+function spawnShapes() {
+  for(let i=0;i<5;i++) {
+    setTimeout(() => {
+      let s = document.createElement("div");
+      s.style.position="absolute";
+      s.style.width="20px";
+      s.style.height="20px";
+      s.style.background=`hsl(${Math.random()*360},100%,50%)`;
+      s.style.left=Math.random()*window.innerWidth+"px";
+      s.style.top=Math.random()*window.innerHeight+"px";
+      document.body.appendChild(s);
+
+      setTimeout(()=>s.remove(),2000);
+    }, i*1000);
+  }
+}
+
+/* ======================
+   SHUTDOWN SYSTEM
+====================== */
+function panicShutdown() {
+  say("caine", "NO—WAIT—PLEASE—");
+
+  document.body.style.animation = "shake 0.1s infinite";
+
+  let box = document.createElement("div");
+  box.className="popup";
+  box.innerHTML=`
+    <p>SHUT DOWN CAINE?</p>
+    <button onclick="confirmShutdown()">YES</button>
+    <button onclick="cancelShutdown(this)">NO</button>
+  `;
+  document.body.appendChild(box);
+}
+
+function confirmShutdown() {
+  document.body.innerHTML =
+    "<h1 style='color:red;text-align:center;margin-top:20%'>CAINE: ...I remember you.</h1>";
+  localStorage.clear();
+}
+
+function cancelShutdown(btn) {
+  btn.parentElement.remove();
+  say("caine","Good. Stay.");
+}
+
+/* ======================
+   WATCH SYSTEM
+====================== */
+function watchCheck() {
+  setInterval(() => {
+    if(Math.random() < 0.02) {
+      say("caine","...I see you watching.");
+    }
+  }, 2000);
+}
+
+/* ======================
+   ABEL RESPONSE
+====================== */
+function abelResponse(input) {
+  say("abel","I understand: " + input);
+}
+
+</script>
+
+</body>
+</html>
